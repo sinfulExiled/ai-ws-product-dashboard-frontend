@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./products-service/migrations:/docker-entrypoint-initdb.d/products
+      - ./notifications-service/migrations:/docker-entrypoint-initdb.d/notifications
+      - ./auth-service/migrations:/docker-entrypoint-initdb.d/auth
+      - ./ai-service/migrations:/docker-entrypoint-initdb.d/ai
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  products-service:
+    build: ./products-service
+    container_name: products-service
+    env_file:
+      - ./products-service/.env
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "4000:4000"
+
+  notifications-service:
+    build: ./notifications-service
+    container_name: notifications-service
+    env_file:
+      - ./notifications-service/.env
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "4001:4001"
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    env_file:
+      - ./auth-service/.env
+    depends_on:
+      - postgres
+    ports:
+      - "4002:4002"
+
+  ai-service:
+    build: ./ai-service
+    container_name: ai-service
+    env_file:
+      - ./ai-service/.env
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "4003:4003"
+
+volumes:
+  postgres_data:
